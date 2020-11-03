@@ -12,120 +12,114 @@ class Bid extends BackendController
     {
         // To inherit directly the attributes of the parent class.
         parent::__construct();
-	$this->load->view('header');
-	$this->load->model('model');
+        $this->load->view('header');
+        $this->load->library('session');
+        $this->load->model('model');
     }
 
 
 
-	public function index($order="")
-	{
-		
-		$this->load->library('bootpag');
-	$this->bootpag->whereto('bid_c/index');
+    public function index($order="")
+    {
+        $this->load->library('bootpag');
+        $this->bootpag->whereto('bid_c/index');
 
 
-		//if(!isset($_SESSION['username']))
-		//redirect('Validation_c2');
-		
-		//$order=$this->input->get('id');	
+        //if(!isset($_SESSION['username']))
+        //redirect('Validation_c2');
+        
+        //$order=$this->input->get('id');
 
 
-		// $_POST['aucid']; is from homepage hidden input 
+        // $_POST['aucid']; is from homepage hidden input
 
-		if($this->input->post('search')){
+        if ($this->input->post('search')) {
+            $_SESSION['pos']=$this->input->post();
+            unset($_SESSION['pos']['search']);
+        
+            foreach ($_SESSION['pos'] as $key=>$value) {
+                if ($value) {
+                    $data[$key]=$value;
+                }
 
-			$_SESSION['pos']=$this->input->post();
-			unset($_SESSION['pos']['search']);
-		
-			foreach($_SESSION['pos'] as $key=>$value){
-				if($value)
-				$data[$key]=$value;
+                $bid['data']=$this->model->searchn("bidders", $data, 4, $this->uri->segment(3));
+            }
+        }
 
-	$bid['data']=$this->model->searchn("bidders",$data,4,$this->uri->segment(3));
-		}
-	}
+        if (!($this->input->post('search')) or $this->input->post('showall')) {
+            $bid['data']=$this->model->sort("bidders", $order, 4, $this->uri->segment(3));
+        }
+        $aa=$_POST['aucid'];
 
-		if(!($this->input->post('search')) or $this->input->post('showall')){
-
-			$bid['data']=$this->model->sort("bidders",$order,4,$this->uri->segment(3));
-            }	
-	$aa=$_POST['aucid'];
-
-   $this->load->view('bid/dispbid',$bid,$aa);
-	
-	}
+        $this->load->view('bid/dispbid', $bid, $aa);
+    }
 
 
-	public function newbid()
-	{ $x=0;
-		$this->load->view('bid/insbid');
+    public function newbid()
+    {
+        $x=0;
+        $this->load->view('bid/insbid');
 
-		if(isset($_POST['save'])){
-			$data=array(
-				'auctionid'=>$_POST['auctionid'],
-				'userid'=>$_POST['userid'],
-				'bidamount'=>$_POST['bidamount'],
-				
-			);
-			$bid['data']=$this->model->adddata($data,'bidders');
+        if (isset($_POST['save'])) {
+            $data=array(
+                'auctionid'=>$_POST['auctionid'],
+                'userid'=>$_POST['userid'],
+                'bidamount'=>$_POST['bidamount'],
+                
+            );
+            $bid['data']=$this->model->adddata($data, 'bidders');
 
-			if($bid!=null){
-			$this->session->set_flashdata('alert', "You have inserted a bid successfully");
-			$x++;}
-		}
-		
+            if ($bid!=null) {
+                $this->session->set_flashdata('alert', "You have inserted a bid successfully");
+                $x++;
+            }
+        }
+        
 
-		if($x==1)
-		{redirect('index.php/bid');
-		}
+        if ($x==1) {
+            redirect('index.php/bid');
+        }
+    }
+    public function updatebid($id)
+    {
+        $x=0;
+        $array=array("bidid"=>$id);
+    
+        $pos['dat']=$this->model->getonedata($array, 'bidders');
+        $this->load->view('bid/updbid', $pos);
 
+
+        if (isset($_POST['update'])) {
+            $data=array(
+            'auctionid'=>$_POST['auctionid'],
+            'userid'=>$_POST['userid'],
+            'bidamount'=>$_POST['bidamount'],
+            
+        );
+        
+            $bid['data']=$this->model->updatedata($data, $array, 'bidders');
+            if ($bid!=null) {
+                $this->session->set_flashdata('alert', "You have updated bid number $id successfully");
+                $x++;
+                ;
+            }
+        }
+
+        if ($x==1) {
+            redirect('index.php/bid');
+        }
+    }
+
+    public function deletebid($id)
+    {
+        $array=array("bidid"=>$id);
+
+    
+        $this->model->deletedata($array, 'bidders');
+        $bid['data']=$this->model->sort('bidders');
+        //	if($bid!=null)
+        //	$this->session->set_flashdata('alert', "You have deleted bid number $id successfully");
+
+        redirect('index.php/bid');
+    }
 }
-public function updatebid($id)
-
-{$x=0;
-	 	 $array=array("bidid"=>$id);
-	
-	$pos['dat']=$this->model->getonedata($array,'bidders');
-	$this->load->view('bid/updbid',$pos);
-
-
-	if(isset($_POST['update'])){
-		$data=array(
-			'auctionid'=>$_POST['auctionid'],
-			'userid'=>$_POST['userid'],
-			'bidamount'=>$_POST['bidamount'],
-			
-		);
-		
-	 $bid['data']=$this->model->updatedata($data,$array,'bidders');
-	 if($bid!=null){
-	 $this->session->set_flashdata('alert', "You have updated bid number $id successfully");
-	 $x++;; 
-	}
-	}
-
-	if($x==1){
-		redirect('index.php/bid');
-		}	
-
-}
-
-public function deletebid($id)
-{ 	 $array=array("bidid"=>$id);
-
-	
-	 $this->model->deletedata($array,'bidders');
-	$bid['data']=$this->model->sort('bidders');
-//	if($bid!=null)
-//	$this->session->set_flashdata('alert', "You have deleted bid number $id successfully");
-
-	redirect('index.php/bid');
-
-}
-
-
-
-
-}
-?>
